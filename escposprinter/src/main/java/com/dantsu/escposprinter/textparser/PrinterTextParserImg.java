@@ -10,7 +10,9 @@ import com.dantsu.escposprinter.EscPosPrinterSize;
 
 
 public class PrinterTextParserImg implements IPrinterTextParserElement {
-    
+
+    private static final String TAG = "PrinterTextParserImg-Mullife";
+
     /**
      * Convert Drawable instance to a hexadecimal string of the image data.
      *

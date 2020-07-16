@@ -17,6 +17,7 @@ import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -38,12 +39,22 @@ import com.dantsu.thermalprinter.async.AsyncUsbEscPosPrint;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final String TAG = "MainActivity-Mullife";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Button button = (Button) this.findViewById(R.id.button_bluetooth);
+
+        Button button = (Button) this.findViewById(R.id.button_bluetooth_scan);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                printBluetooth();
+            }
+        });
+
+        button = (Button) this.findViewById(R.id.button_bluetooth);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -78,6 +89,7 @@ public class MainActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH}, MainActivity.PERMISSION_BLUETOOTH);
         } else {
             // this.printIt(BluetoothPrintersConnections.selectFirstPaired());
+            Log.i(TAG, "printBluetooth");
             new AsyncBluetoothEscPosPrint(this).execute(this.getAsyncEscPosPrinter(null));
         }
     }
@@ -87,6 +99,7 @@ public class MainActivity extends AppCompatActivity {
         if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             switch (requestCode) {
                 case MainActivity.PERMISSION_BLUETOOTH:
+                    Log.i(TAG, "onRequestPermissionsResult");
                     this.printBluetooth();
                     break;
             }
@@ -228,6 +241,7 @@ public class MainActivity extends AppCompatActivity {
      * Asynchronous printing
      */
     public AsyncEscPosPrinter getAsyncEscPosPrinter(DeviceConnection printerConnection) {
+        Log.i(TAG,"getAsyncEscPosPrinter printerConnection:" + printerConnection);
         AsyncEscPosPrinter printer = new AsyncEscPosPrinter(printerConnection, 203, 48f, 32);
         return printer.setTextToPrint(
                 "[C]<img>" + PrinterTextParserImg.bitmapToHexadecimalString(printer, this.getApplicationContext().getResources().getDrawableForDensity(R.drawable.logo, DisplayMetrics.DENSITY_MEDIUM)) + "</img>\n" +

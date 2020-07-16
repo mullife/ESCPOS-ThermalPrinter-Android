@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.os.AsyncTask;
+import android.util.Log;
 
 import com.dantsu.escposprinter.EscPosPrinter;
 import com.dantsu.escposprinter.connection.DeviceConnection;
@@ -16,6 +17,9 @@ import com.dantsu.escposprinter.exceptions.EscPosParserException;
 import java.lang.ref.WeakReference;
 
 public abstract class AsyncEscPosPrint extends AsyncTask<AsyncEscPosPrinter, Integer, Integer> {
+
+    private static final String TAG = "AsyncEscPosPrint-Mullife";
+
     protected final static int FINISH_SUCCESS = 1;
     protected final static int FINISH_NO_PRINTER = 2;
     protected final static int FINISH_PRINTER_DISCONNECTED = 3;
@@ -38,6 +42,7 @@ public abstract class AsyncEscPosPrint extends AsyncTask<AsyncEscPosPrinter, Int
 
     protected Integer doInBackground(AsyncEscPosPrinter... printersData) {
         if (printersData.length == 0) {
+            Log.i(TAG, "doInBackground FINISH_NO_PRINTER");
             return AsyncEscPosPrint.FINISH_NO_PRINTER;
         }
 
@@ -53,6 +58,7 @@ public abstract class AsyncEscPosPrint extends AsyncTask<AsyncEscPosPrinter, Int
             }
 
             if(deviceConnection == null) {
+                Log.i(TAG, "doInBackground deviceConnection=NULL FINISH_NO_PRINTER");
                 return AsyncEscPosPrint.FINISH_NO_PRINTER;
             }
 

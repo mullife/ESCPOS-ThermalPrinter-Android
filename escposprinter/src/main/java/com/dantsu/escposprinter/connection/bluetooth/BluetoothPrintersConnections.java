@@ -3,10 +3,13 @@ package com.dantsu.escposprinter.connection.bluetooth;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
+import android.util.Log;
 
 import com.dantsu.escposprinter.exceptions.EscPosConnectionException;
 
 public class BluetoothPrintersConnections extends BluetoothConnections {
+
+    private static final String TAG = "BluetoothPrintersConnections-Mullife";
 
     /**
      * Easy way to get the first bluetooth printer paired / connected.
@@ -50,10 +53,10 @@ public class BluetoothPrintersConnections extends BluetoothConnections {
 
             int majDeviceCl = device.getBluetoothClass().getMajorDeviceClass(),
                     deviceCl = device.getBluetoothClass().getDeviceClass();
-
-            if (majDeviceCl == BluetoothClass.Device.Major.IMAGING && (deviceCl == 1664 || deviceCl == BluetoothClass.Device.Major.IMAGING)) {
+            Log.i(TAG, "majDeviceCl:" + majDeviceCl + ",deviceCl:" + deviceCl);
+            //if (majDeviceCl == BluetoothClass.Device.Major.IMAGING && (deviceCl == 1664 || deviceCl == BluetoothClass.Device.Major.IMAGING)) {
                 printersTmp[i++] = new BluetoothConnection(device);
-            }
+            //}
         }
         BluetoothConnection[] bluetoothPrinters = new BluetoothConnection[i];
         System.arraycopy(printersTmp, 0, bluetoothPrinters, 0, i);

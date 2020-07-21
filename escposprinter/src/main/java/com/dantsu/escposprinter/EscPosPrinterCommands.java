@@ -1,6 +1,7 @@
 package com.dantsu.escposprinter;
 
 import android.graphics.Bitmap;
+import android.util.Log;
 
 import java.io.UnsupportedEncodingException;
 import java.util.EnumMap;
@@ -18,6 +19,8 @@ import com.google.zxing.qrcode.encoder.Encoder;
 import com.google.zxing.qrcode.encoder.QRCode;
 
 public class EscPosPrinterCommands {
+
+    private static final String TAG = "EscPosPrinterCommands-Mullife";
 
     public static final byte LF = 0x0A;
 
@@ -42,7 +45,6 @@ public class EscPosPrinterCommands {
     public static final byte[] TEXT_DOUBLE_STRIKE_ON = new byte[]{0x1B, 0x47, 0x01};
 
 
-
     public static final int BARCODE_TYPE_UPCA = 65;
     public static final int BARCODE_TYPE_UPCE = 66;
     public static final int BARCODE_TYPE_EAN13 = 67;
@@ -62,9 +64,23 @@ public class EscPosPrinterCommands {
     private EscPosCharsetEncoding charsetEncoding;
 
 
-    private static byte[] initImageCommand(int bytesByLine, int bitmapHeight) {
-        byte[] imageBytes = new byte[8 + bytesByLine * bitmapHeight];
+//    private static byte[] initImageCommand(int bytesByLine, int bitmapHeight) {
+//        byte[] imageBytes = new byte[8 + bytesByLine * bitmapHeight]; // 8 bit to one byte
+//        System.arraycopy(new byte[]{0x1D, 0x76, 0x30, 0x00, (byte) bytesByLine, 0x00, (byte) bitmapHeight, 0x00}, 0, imageBytes, 0, 8);
+//        return imageBytes;
+//    }
+
+    private static byte[] initImageCommand(int bytesByLine, int bitmapHeight, int format) {
+        byte[] imageBytes;
+
+        if (format == 1) {
+            imageBytes = new byte[8 + bytesByLine * bitmapHeight * 2]; // 4bit to one byte. so need the double size for sata store
+        } else {
+            imageBytes = new byte[8 + bytesByLine * bitmapHeight]; // 8 bit to one byte
+        }
+
         System.arraycopy(new byte[]{0x1D, 0x76, 0x30, 0x00, (byte) bytesByLine, 0x00, (byte) bitmapHeight, 0x00}, 0, imageBytes, 0, 8);
+
         return imageBytes;
     }
 
@@ -80,7 +96,7 @@ public class EscPosPrinterCommands {
                 bitmapHeight = bitmap.getHeight(),
                 bytesByLine = (int) Math.ceil(((float) bitmapWidth) / 8f);
 
-        byte[] imageBytes = EscPosPrinterCommands.initImageCommand(bytesByLine, bitmapHeight);
+        byte[] imageBytes = EscPosPrinterCommands.initImageCommand(bytesByLine, bitmapHeight, 0);
 
         int i = 8;
         for (int posY = 0; posY < bitmapHeight; posY++) {
@@ -110,6 +126,60 @@ public class EscPosPrinterCommands {
         return imageBytes;
     }
 
+    private static int grayPixle(int pixel) {
+        int red = (pixel & 0x00ff0000) >> 16;//获取r分量
+        int green = (pixel & 0x0000ff00) >> 8;//获取g分量
+        int blue = pixel & 0x000000ff;//获取b分量
+        return (int) (red * 0.3f + green * 0.59f + blue * 0.11f);//加权平均法进行灰度化
+    }
+
+    /**
+     * Convert Bitmap instance to a byte array compatible with ESC/POS printer.
+     *
+     * @param bitmap Bitmap to be convert
+     * @param format Bitmap to be convert with grey level more than 4 or only 2 level with 0 or 1
+     * @return Bytes contain the image in ESC/POS command
+     */
+    public static byte[] bitmapToBytes(Bitmap bitmap, int format) {
+        int
+                bitmapWidth = bitmap.getWidth(),
+                bitmapHeight = bitmap.getHeight(),
+                bytesByLine = (int) Math.ceil(((float) bitmapWidth) / 8f);
+
+        byte[] imageBytes = EscPosPrinterCommands.initImageCommand(bytesByLine, bitmapHeight, format);
+
+        int i = 8;
+        int part[] = new int[4];
+        int temp = 0;
+        for (int posY = 0; posY < bitmapHeight; posY++) {
+            for (int j = 0; j < bitmapWidth; j += 4) {
+                for (int k = 0; k < 4; k++) {
+                    int posX = j + k;
+                    if (posX < bitmapWidth) {
+                        int pixel = bitmap.getPixel(posX, posY);
+                        int grayPixle = grayPixle(pixel);
+                        if (grayPixle <= 64) {
+                            part[k] = 0x00;
+                        } else if (grayPixle <= 128) {
+                            part[k] = 0x01;
+                        } else if (grayPixle <= 192) {
+                            part[k] = 0x02;
+                        } else {
+                            part[k] = 0x03;
+                        }
+                    } else {
+                        Log.i(TAG, "Error: out of bitmapwidth!!!!");
+                        break;
+                    }
+                }
+                temp = part[0] * 64 + part[1] * 16 + part[2] * 4 + part[3] * 1;
+                imageBytes[i++] = (byte) temp;
+            }
+        }
+
+        return imageBytes;
+    }
+
     /**
      * Convert a string to QR Code byte array compatible with ESC/POS printer.
      *
@@ -133,7 +203,7 @@ public class EscPosPrinterCommands {
         }
 
         if (byteMatrix == null) {
-            return EscPosPrinterCommands.initImageCommand(0, 0);
+            return EscPosPrinterCommands.initImageCommand(0, 0, 0);
         }
 
         int
@@ -146,10 +216,10 @@ public class EscPosPrinterCommands {
                 i = 8;
 
         if (coefficient < 1) {
-            return EscPosPrinterCommands.initImageCommand(0, 0);
+            return EscPosPrinterCommands.initImageCommand(0, 0, 0);
         }
 
-        byte[] imageBytes = EscPosPrinterCommands.initImageCommand(bytesByLine, imageHeight);
+        byte[] imageBytes = EscPosPrinterCommands.initImageCommand(bytesByLine, imageHeight, 0);
 
         for (int y = 0; y < height; y++) {
             byte[] lineBytes = new byte[bytesByLine];
@@ -432,7 +502,7 @@ public class EscPosPrinterCommands {
             return this;
         }
 
-        this.printerConnection.write(new byte[]{ 0x1D, 0x56, 0x31});
+        this.printerConnection.write(new byte[]{0x1D, 0x56, 0x31});
         this.printerConnection.send();
         return this;
     }

@@ -6,21 +6,32 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.DocumentsContract;
+import android.provider.MediaStore;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.dantsu.escposprinter.EscPosPrinter;
 import com.dantsu.escposprinter.connection.DeviceConnection;
@@ -37,20 +48,28 @@ import com.dantsu.thermalprinter.async.AsyncEscPosPrinter;
 import com.dantsu.thermalprinter.async.AsyncTcpEscPosPrint;
 import com.dantsu.thermalprinter.async.AsyncUsbEscPosPrint;
 
+import java.io.FileNotFoundException;
+
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity-Mullife";
+
+    private Button take_photo,select_photo;
+    public static final int TAKE_PHOTO = 1;
+    public static final int SELECT_PHOTO = 2;
+    private ImageView imageview;
+    private Uri imageUri;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Button button = (Button) this.findViewById(R.id.button_bluetooth_scan);
+        Button button = (Button) this.findViewById(R.id.select_photo);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                printBluetooth();
+                select_photo();
             }
         });
 
@@ -272,4 +291,122 @@ public class MainActivity extends AppCompatActivity {
                         "[C]<qrcode size='20'>http://www.developpeur-web.dantsu.com/</qrcode>"
         );
     }
+
+    /**
+     * 从相册中获取图片
+     * */
+    public void select_photo() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},1);
+        }else {
+            openAlbum();
+        }
+    }
+
+    /**
+     * 打开相册的方法
+     * */
+    private void openAlbum() {
+        Intent intent = new Intent("android.intent.action.GET_CONTENT");
+        intent.setType("image/*");
+        startActivityForResult(intent,SELECT_PHOTO);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
+            case TAKE_PHOTO :
+                if (resultCode == RESULT_OK) {
+                    try {
+                        Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(imageUri));
+                        imageview.setImageBitmap(bitmap);
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                }
+                break;
+            case SELECT_PHOTO :
+                if (resultCode == RESULT_OK) {
+                    //判断手机系统版本号
+                    if (Build.VERSION.SDK_INT > 19) {
+                        //4.4及以上系统使用这个方法处理图片
+                        handleImgeOnKitKat(data);
+                    }else {
+                        handleImageBeforeKitKat(data);
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    /**
+     *4.4以下系统处理图片的方法
+     * */
+    private void handleImageBeforeKitKat(Intent data) {
+        Uri uri = data.getData();
+        String imagePath = getImagePath(uri,null);
+        displayImage(imagePath);
+    }
+
+    /**
+     * 4.4及以上系统处理图片的方法
+     * */
+    @TargetApi(Build.VERSION_CODES.KITKAT)
+    private void handleImgeOnKitKat(Intent data) {
+        String imagePath = null;
+        Uri uri = data.getData();
+        if (DocumentsContract.isDocumentUri(this,uri)) {
+            //如果是document类型的uri，则通过document id处理
+            String docId = DocumentsContract.getDocumentId(uri);
+            if ("com.android.providers.media.documents".equals(uri.getAuthority())) {
+                //解析出数字格式的id
+                String id = docId.split(":")[1];
+                String selection = MediaStore.Images.Media._ID + "=" + id;
+                imagePath = getImagePath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,selection);
+            }else if ("com.android.providers.downloads.documents".equals(uri.getAuthority())) {
+                Uri contentUri = ContentUris.withAppendedId(Uri.parse("content://downloads/public_downloads"),Long.valueOf(docId));
+                imagePath = getImagePath(contentUri,null);
+            }else if ("content".equalsIgnoreCase(uri.getScheme())) {
+                //如果是content类型的uri，则使用普通方式处理
+                imagePath = getImagePath(uri,null);
+            }else if ("file".equalsIgnoreCase(uri.getScheme())) {
+                //如果是file类型的uri，直接获取图片路径即可
+                imagePath = uri.getPath();
+            }
+            //根据图片路径显示图片
+            displayImage(imagePath);
+        }
+    }
+
+    /**
+     * 根据图片路径显示图片的方法
+     * */
+    private void displayImage(String imagePath) {
+        if (imagePath != null) {
+            Bitmap bitmap = BitmapFactory.decodeFile(imagePath);
+            imageview.setImageBitmap(bitmap);
+        }else {
+            Toast.makeText(MainActivity.this,"failed to get image",Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * 通过uri和selection来获取真实的图片路径
+     * */
+    private String getImagePath(Uri uri,String selection) {
+        String path = null;
+        Cursor cursor = getContentResolver().query(uri,null,selection,null,null);
+        if (cursor != null) {
+            if (cursor.moveToFirst()) {
+                path = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA));
+            }
+            cursor.close();
+        }
+        return path;
+    }
+
 }

@@ -12,28 +12,34 @@
         android:orientation="vertical">
 
         <Button
-            android:id="@+id/select_photo"
+        android:id="@+id/select_photo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="select_photo"/>
+
+        <Button
+            android:id="@+id/print_select_photo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="select_photo"/>
+            android:text="print_select_photo"/>
 
         <ImageView
             android:id="@+id/imageview"
             android:layout_width="match_parent"
-            android:layout_height="300dp"
-            android:layout_marginBottom="20dp"/>
+            android:layout_height="250dp"
+            android:layout_marginBottom="10dp"/>
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp"
-            android:text="Click to print !" />
+<!--        <TextView-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_marginBottom="20dp"-->
+<!--            android:text="Click to print !" />-->
 
         <Button
             android:id="@+id/button_bluetooth"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp"
+            android:layout_marginBottom="10dp"
             android:text="Print by bluetooth !" />
 
         <Button
@@ -48,7 +54,7 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:orientation="horizontal"
-            android:layout_marginBottom="20dp">
+            android:layout_marginBottom="10dp">
 
             <TextView
                 android:layout_width="wrap_content"

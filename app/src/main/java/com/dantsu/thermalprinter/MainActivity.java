@@ -54,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity-Mullife";
 
-    private Button take_photo,select_photo;
+    private Button take_photo, select_photo;
     public static final int TAKE_PHOTO = 1;
     public static final int SELECT_PHOTO = 2;
     private ImageView imageview;
@@ -65,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        imageview = (ImageView)findViewById(R.id.imageview);
         Button button = (Button) this.findViewById(R.id.select_photo);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -102,6 +103,7 @@ public class MainActivity extends AppCompatActivity {
     ==============================================================================================*/
 
     public static final int PERMISSION_BLUETOOTH = 1;
+    public static final int PERMISSION_WRITE_EXTERNAL_STORAGE = 2;
 
     public void printBluetooth() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED) {
@@ -115,11 +117,15 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             switch (requestCode) {
                 case MainActivity.PERMISSION_BLUETOOTH:
                     Log.i(TAG, "onRequestPermissionsResult");
                     this.printBluetooth();
+                    break;
+                case MainActivity.PERMISSION_WRITE_EXTERNAL_STORAGE:
+                    this.select_photo();
                     break;
             }
         }
@@ -260,7 +266,7 @@ public class MainActivity extends AppCompatActivity {
      * Asynchronous printing
      */
     public AsyncEscPosPrinter getAsyncEscPosPrinter(DeviceConnection printerConnection) {
-        Log.i(TAG,"getAsyncEscPosPrinter printerConnection:" + printerConnection);
+        Log.i(TAG, "getAsyncEscPosPrinter printerConnection:" + printerConnection);
         AsyncEscPosPrinter printer = new AsyncEscPosPrinter(printerConnection, 203, 48f, 32);
         return printer.setTextToPrint(
                 "[C]<img>" + PrinterTextParserImg.bitmapToHexadecimalString(printer, this.getApplicationContext().getResources().getDrawableForDensity(R.drawable.logo, DisplayMetrics.DENSITY_MEDIUM)) + "</img>\n" +
@@ -294,30 +300,30 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * 从相册中获取图片
-     * */
+     */
     public void select_photo() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},1);
-        }else {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_WRITE_EXTERNAL_STORAGE);
+        } else {
             openAlbum();
         }
     }
 
     /**
      * 打开相册的方法
-     * */
+     */
     private void openAlbum() {
         Intent intent = new Intent("android.intent.action.GET_CONTENT");
         intent.setType("image/*");
-        startActivityForResult(intent,SELECT_PHOTO);
+        startActivityForResult(intent, SELECT_PHOTO);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         switch (requestCode) {
-            case TAKE_PHOTO :
+            case TAKE_PHOTO:
                 if (resultCode == RESULT_OK) {
                     try {
                         Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(imageUri));
@@ -327,13 +333,13 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
                 break;
-            case SELECT_PHOTO :
+            case SELECT_PHOTO:
                 if (resultCode == RESULT_OK) {
                     //判断手机系统版本号
                     if (Build.VERSION.SDK_INT > 19) {
                         //4.4及以上系统使用这个方法处理图片
                         handleImgeOnKitKat(data);
-                    }else {
+                    } else {
                         handleImageBeforeKitKat(data);
                     }
                 }
@@ -344,36 +350,36 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     *4.4以下系统处理图片的方法
-     * */
+     * 4.4以下系统处理图片的方法
+     */
     private void handleImageBeforeKitKat(Intent data) {
         Uri uri = data.getData();
-        String imagePath = getImagePath(uri,null);
+        String imagePath = getImagePath(uri, null);
         displayImage(imagePath);
     }
 
     /**
      * 4.4及以上系统处理图片的方法
-     * */
+     */
     @TargetApi(Build.VERSION_CODES.KITKAT)
     private void handleImgeOnKitKat(Intent data) {
         String imagePath = null;
         Uri uri = data.getData();
-        if (DocumentsContract.isDocumentUri(this,uri)) {
+        if (DocumentsContract.isDocumentUri(this, uri)) {
             //如果是document类型的uri，则通过document id处理
             String docId = DocumentsContract.getDocumentId(uri);
             if ("com.android.providers.media.documents".equals(uri.getAuthority())) {
                 //解析出数字格式的id
                 String id = docId.split(":")[1];
                 String selection = MediaStore.Images.Media._ID + "=" + id;
-                imagePath = getImagePath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,selection);
-            }else if ("com.android.providers.downloads.documents".equals(uri.getAuthority())) {
-                Uri contentUri = ContentUris.withAppendedId(Uri.parse("content://downloads/public_downloads"),Long.valueOf(docId));
-                imagePath = getImagePath(contentUri,null);
-            }else if ("content".equalsIgnoreCase(uri.getScheme())) {
+                imagePath = getImagePath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, selection);
+            } else if ("com.android.providers.downloads.documents".equals(uri.getAuthority())) {
+                Uri contentUri = ContentUris.withAppendedId(Uri.parse("content://downloads/public_downloads"), Long.valueOf(docId));
+                imagePath = getImagePath(contentUri, null);
+            } else if ("content".equalsIgnoreCase(uri.getScheme())) {
                 //如果是content类型的uri，则使用普通方式处理
-                imagePath = getImagePath(uri,null);
-            }else if ("file".equalsIgnoreCase(uri.getScheme())) {
+                imagePath = getImagePath(uri, null);
+            } else if ("file".equalsIgnoreCase(uri.getScheme())) {
                 //如果是file类型的uri，直接获取图片路径即可
                 imagePath = uri.getPath();
             }
@@ -384,22 +390,22 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * 根据图片路径显示图片的方法
-     * */
+     */
     private void displayImage(String imagePath) {
         if (imagePath != null) {
             Bitmap bitmap = BitmapFactory.decodeFile(imagePath);
             imageview.setImageBitmap(bitmap);
-        }else {
-            Toast.makeText(MainActivity.this,"failed to get image",Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(MainActivity.this, "failed to get image", Toast.LENGTH_SHORT).show();
         }
     }
 
     /**
      * 通过uri和selection来获取真实的图片路径
-     * */
-    private String getImagePath(Uri uri,String selection) {
+     */
+    private String getImagePath(Uri uri, String selection) {
         String path = null;
-        Cursor cursor = getContentResolver().query(uri,null,selection,null,null);
+        Cursor cursor = getContentResolver().query(uri, null, selection, null, null);
         if (cursor != null) {
             if (cursor.moveToFirst()) {
                 path = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA));

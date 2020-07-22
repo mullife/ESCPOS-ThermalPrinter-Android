@@ -59,18 +59,27 @@ public class MainActivity extends AppCompatActivity {
     public static final int SELECT_PHOTO = 2;
     private ImageView imageview;
     private Uri imageUri;
+    private Bitmap BitmapUri;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        imageview = (ImageView) findViewById(R.id.imageview);
 
-        imageview = (ImageView)findViewById(R.id.imageview);
         Button button = (Button) this.findViewById(R.id.select_photo);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 select_photo();
+            }
+        });
+
+        button = (Button) this.findViewById(R.id.print_select_photo);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                printSelectphotoByBluetooth();
             }
         });
 
@@ -104,6 +113,7 @@ public class MainActivity extends AppCompatActivity {
 
     public static final int PERMISSION_BLUETOOTH = 1;
     public static final int PERMISSION_WRITE_EXTERNAL_STORAGE = 2;
+    public static final int PERMISSION_BLUETOOTH_SELECT_PHOTO = 3;
 
     public void printBluetooth() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED) {
@@ -112,6 +122,16 @@ public class MainActivity extends AppCompatActivity {
             // this.printIt(BluetoothPrintersConnections.selectFirstPaired());
             Log.i(TAG, "printBluetooth");
             new AsyncBluetoothEscPosPrint(this).execute(this.getAsyncEscPosPrinter(null));
+        }
+    }
+
+    public void printSelectphotoByBluetooth() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH}, MainActivity.PERMISSION_BLUETOOTH_SELECT_PHOTO);
+        } else {
+            // this.printIt(BluetoothPrintersConnections.selectFirstPaired());
+            Log.i(TAG, "printBluetooth");
+            new AsyncBluetoothEscPosPrint(this).execute(this.getAsyncEscPosPrinterSelectphoto(null));
         }
     }
 
@@ -126,6 +146,9 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case MainActivity.PERMISSION_WRITE_EXTERNAL_STORAGE:
                     this.select_photo();
+                    break;
+                case MainActivity.PERMISSION_BLUETOOTH_SELECT_PHOTO:
+                    this.printSelectphotoByBluetooth();
                     break;
             }
         }
@@ -299,6 +322,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
+     * Asynchronous printing
+     */
+    public AsyncEscPosPrinter getAsyncEscPosPrinterSelectphoto(DeviceConnection printerConnection) {
+        Log.i(TAG, "getAsyncEscPosPrinterSelectphoto printerConnection:" + printerConnection);
+        AsyncEscPosPrinter printer = new AsyncEscPosPrinter(printerConnection, 203, 48f, 32);
+//        return printer.setTextToPrint(
+//                "[C]<img>" + PrinterTextParserImg.bitmapToHexadecimalString(printer, this.getApplicationContext().getResources().getDrawableForDensity(R.drawable.logo, DisplayMetrics.DENSITY_MEDIUM)) + "</img>\n"
+//        );
+
+        return printer.setTextToPrint(
+                "[C]<img>" + PrinterTextParserImg.bitmapToHexadecimalString(printer, BitmapUri) + "</img>\n"
+        );
+    }
+
+    /**
      * 从相册中获取图片
      */
     public void select_photo() {
@@ -395,6 +433,7 @@ public class MainActivity extends AppCompatActivity {
         if (imagePath != null) {
             Bitmap bitmap = BitmapFactory.decodeFile(imagePath);
             imageview.setImageBitmap(bitmap);
+            BitmapUri = bitmap;
         } else {
             Toast.makeText(MainActivity.this, "failed to get image", Toast.LENGTH_SHORT).show();
         }

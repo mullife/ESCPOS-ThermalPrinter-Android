@@ -2,8 +2,11 @@ package com.dantsu.escposprinter;
 
 
 import android.graphics.Bitmap;
+import android.util.Log;
 
 public abstract class EscPosPrinterSize {
+
+    private static final String TAG = "EscPosPrinterSize-Mullife";
 
     public static final float INCH_TO_MM = 25.4f;
 
@@ -91,6 +94,8 @@ public abstract class EscPosPrinterSize {
                 maxWidth = this.printerWidthPx,
                 maxHeight = 256;
 
+        Log.i(TAG, "Before bitmapWidth:" + bitmapWidth + ";bitmapHeight:" + bitmapHeight + ";maxWidth:" + maxWidth + ";isSizeEdit:" + isSizeEdit);
+
         if (bitmapWidth > maxWidth) {
             bitmapHeight = Math.round(((float) bitmapHeight) * ((float) maxWidth) / ((float) bitmapWidth));
             bitmapWidth = maxWidth;
@@ -105,6 +110,8 @@ public abstract class EscPosPrinterSize {
         if (isSizeEdit) {
             bitmap = Bitmap.createScaledBitmap(bitmap, bitmapWidth, bitmapHeight, false);
         }
+
+        Log.i(TAG, "After bitmapWidth:" + bitmapWidth + ";bitmapHeight:" + bitmapHeight + ";maxWidth:" + maxWidth + ";isSizeEdit:" + isSizeEdit);
 
         return EscPosPrinterCommands.bitmapToBytes(bitmap);
     }

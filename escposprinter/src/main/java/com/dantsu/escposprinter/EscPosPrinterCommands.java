@@ -96,6 +96,8 @@ public class EscPosPrinterCommands {
                 bitmapHeight = bitmap.getHeight(),
                 bytesByLine = (int) Math.ceil(((float) bitmapWidth) / 8f);
 
+        Log.i(TAG, "bitmapWidth:" + bitmapWidth + "; bitmapHeight:" + bitmapHeight + "; bytesByLine:" + bytesByLine);
+
         byte[] imageBytes = EscPosPrinterCommands.initImageCommand(bytesByLine, bitmapHeight, 0);
 
         int i = 8;

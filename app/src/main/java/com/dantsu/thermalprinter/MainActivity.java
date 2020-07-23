@@ -34,6 +34,7 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.dantsu.escposprinter.EscPosPrinter;
+import com.dantsu.escposprinter.EscPosPrinterCommands;
 import com.dantsu.escposprinter.connection.DeviceConnection;
 import com.dantsu.escposprinter.connection.tcp.TcpConnection;
 import com.dantsu.escposprinter.connection.usb.UsbConnection;
@@ -332,7 +333,7 @@ public class MainActivity extends AppCompatActivity {
 //        );
 
         return printer.setTextToPrint(
-                "[C]<img>" + PrinterTextParserImg.bitmapToHexadecimalString(printer, BitmapUri) + "</img>\n"
+                "[C]<img>" + PrinterTextParserImg.bitmapToHexadecimalString(printer, BitmapUri, EscPosPrinterCommands.PRINT_BITIMAGE_LEVEL2) + "</img>\n"
         );
     }
 

@@ -60,6 +60,9 @@ public class EscPosPrinterCommands {
     public static final int QRCODE_1 = 49;
     public static final int QRCODE_2 = 50;
 
+    public static final int PRINT_BITIMAGE_LEVEL1 = 0;  // only 1 or 0
+    public static final int PRINT_BITIMAGE_LEVEL2 = 1;  // level with 0, 1, 2, 3
+
     private DeviceConnection printerConnection;
     private EscPosCharsetEncoding charsetEncoding;
 
@@ -73,7 +76,7 @@ public class EscPosPrinterCommands {
     private static byte[] initImageCommand(int bytesByLine, int bitmapHeight, int format) {
         byte[] imageBytes;
 
-        if (format == 1) {
+        if (format == PRINT_BITIMAGE_LEVEL2) {
             imageBytes = new byte[8 + bytesByLine * bitmapHeight * 2]; // 4bit to one byte. so need the double size for sata store
         } else {
             imageBytes = new byte[8 + bytesByLine * bitmapHeight]; // 8 bit to one byte
@@ -96,9 +99,9 @@ public class EscPosPrinterCommands {
                 bitmapHeight = bitmap.getHeight(),
                 bytesByLine = (int) Math.ceil(((float) bitmapWidth) / 8f);
 
-        Log.i(TAG, "bitmapWidth:" + bitmapWidth + "; bitmapHeight:" + bitmapHeight + "; bytesByLine:" + bytesByLine);
+        Log.i(TAG, "bitmapWidth:" + bitmapWidth + "; bitmapHeight:" + bitmapHeight + "; bytesByLine:" + bytesByLine + "; BYTE bytesByLine" + (byte)bytesByLine);
 
-        byte[] imageBytes = EscPosPrinterCommands.initImageCommand(bytesByLine, bitmapHeight, 0);
+        byte[] imageBytes = EscPosPrinterCommands.initImageCommand(bytesByLine, bitmapHeight, PRINT_BITIMAGE_LEVEL1);
 
         int i = 8;
         for (int posY = 0; posY < bitmapHeight; posY++) {
@@ -205,7 +208,7 @@ public class EscPosPrinterCommands {
         }
 
         if (byteMatrix == null) {
-            return EscPosPrinterCommands.initImageCommand(0, 0, 0);
+            return EscPosPrinterCommands.initImageCommand(0, 0, PRINT_BITIMAGE_LEVEL1);
         }
 
         int
@@ -218,10 +221,10 @@ public class EscPosPrinterCommands {
                 i = 8;
 
         if (coefficient < 1) {
-            return EscPosPrinterCommands.initImageCommand(0, 0, 0);
+            return EscPosPrinterCommands.initImageCommand(0, 0, PRINT_BITIMAGE_LEVEL1);
         }
 
-        byte[] imageBytes = EscPosPrinterCommands.initImageCommand(bytesByLine, imageHeight, 0);
+        byte[] imageBytes = EscPosPrinterCommands.initImageCommand(bytesByLine, imageHeight, PRINT_BITIMAGE_LEVEL1);
 
         for (int y = 0; y < height; y++) {
             byte[] lineBytes = new byte[bytesByLine];

@@ -46,7 +46,19 @@ public class PrinterTextParserImg implements IPrinterTextParserElement {
      * @return A hexadecimal string of the image data.
      */
     public static String bitmapToHexadecimalString(EscPosPrinterSize printerSize, Bitmap bitmap) {
-        return PrinterTextParserImg.bytesToHexadecimalString(printerSize.bitmapToBytes(bitmap));
+        return PrinterTextParserImg.bytesToHexadecimalString(printerSize.bitmapToBytes(bitmap, EscPosPrinterCommands.PRINT_BITIMAGE_LEVEL1));
+    }
+
+    /**
+     * Convert Bitmap instance to a hexadecimal string of the image data.
+     *
+     * @param printerSize A EscPosPrinterSize instance that will print the image.
+     * @param bitmap Bitmap instance to be converted.
+     * @param format only two level or more than four level with gray
+     * @return A hexadecimal string of the image data.
+     */
+    public static String bitmapToHexadecimalString(EscPosPrinterSize printerSize, Bitmap bitmap, int format) {
+        return PrinterTextParserImg.bytesToHexadecimalString(printerSize.bitmapToBytes(bitmap, format));
     }
     
     /**

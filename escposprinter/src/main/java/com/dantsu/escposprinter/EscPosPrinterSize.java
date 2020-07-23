@@ -87,7 +87,7 @@ public abstract class EscPosPrinterSize {
      * @param bitmap Instance of Bitmap
      * @return Bytes contain the image in ESC/POS command
      */
-    public byte[] bitmapToBytes(Bitmap bitmap) {
+    public byte[] bitmapToBytes(Bitmap bitmap, int format) {
         boolean isSizeEdit = false;
         int bitmapWidth = bitmap.getWidth(),
                 bitmapHeight = bitmap.getHeight(),
@@ -113,6 +113,6 @@ public abstract class EscPosPrinterSize {
 
         Log.i(TAG, "After bitmapWidth:" + bitmapWidth + ";bitmapHeight:" + bitmapHeight + ";maxWidth:" + maxWidth + ";isSizeEdit:" + isSizeEdit);
 
-        return EscPosPrinterCommands.bitmapToBytes(bitmap);
+        return EscPosPrinterCommands.bitmapToBytes(bitmap, format);
     }
 }
